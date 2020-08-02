@@ -3,11 +3,12 @@
     <NavBar class="navbar_box">
       <div slot="center">购物街</div>
     </NavBar>
+    <TabControl :tabControl="['流行', '新款', '精选']" @tabClick="tabClick" ref="tabControl1" class="tab-control" v-show="isfixed"></TabControl>
     <scroll class="content" ref="scroll" @scroll="contentScroll" :probeType="3" :pullUpLoad="true" @pullingUp="moreLoader">
-      <HomeSwiper :banner="banner"/>
+      <HomeSwiper :banner="banner" @swiperImageLoad="swiperImageLoad"/>
       <HomeRecommend :recommend='recommend'/>
       <Featur/>
-      <TabControl :tabControl="['流行', '新款', '精选']" @tabClick="tabClick"></TabControl>
+      <TabControl :tabControl="['流行', '新款', '精选']" @tabClick="tabClick" ref="tabControl2"></TabControl>
       <GoodsList :goods="showGoods"/>
     </scroll>
     <BackTop @click.native="backClick" v-show="isShowBackTop"/>
@@ -28,6 +29,7 @@ import BackTop from 'components/content/backTop/backTop'
 
 // 导入请求数据的组件
 import { getHomeList, getDataList } from 'network/home.js';
+import { debounce } from 'components/common/debounce'
 export default {
   data () {
     return {
@@ -43,7 +45,12 @@ export default {
       // 请求的默认goods
       tabGoods: 'pop',
       // 显示隐藏返回顶部图标
-      isShowBackTop: false
+      isShowBackTop: false,
+      // TabControl的offsetTop的默认值
+      tabOffsetTop: 0,
+      // 是否定位tabControl为fixed
+      isfixed: false,
+      scrollY: 0
     }
   },
   components: {
@@ -63,6 +70,16 @@ export default {
     this.getDataList('new')
     this.getDataList('sell')
   },
+  mounted () {
+    // 创建防抖函数
+    const refresh = debounce(this.$refs.scroll.refresh, 50)
+    // 监听item中图片加载完成。加载完成就重新计算高度
+    this.$bus.$on('HomeimgItemLoad', () => {
+      // 调用函数
+      refresh()
+    })
+    this.swiperImageLoad()
+  },
   methods: {
     // 请求首页的轮播图和四个图标数据
     getHomeList () {
@@ -80,9 +97,13 @@ export default {
         this.goods[type].page += 1
       })
     },
+
+    // 加载完轮播图的图片后计算tabControl的offsetTop值
+    swiperImageLoad () {
+      this.tabOffsetTop = this.$refs.tabControl2.$el.offsetTop
+    },
     // 获取点击的是哪个按钮，传参数
     tabClick (index) {
-      console.log(index)
       switch (index) {
         case 0:
           this.tabGoods = 'pop'
@@ -94,15 +115,19 @@ export default {
           this.tabGoods = 'sell'
           break
       }
+      this.$refs.tabControl1.activeIndex = index
+      this.$refs.tabControl2.activeIndex = index
     },
     // 返回顶部按钮
     backClick () {
-      this.$refs.scroll.backScroll(0, 0, 500)
+      // 返回顶部的点击事件一定要在组件事件上加native
+      this.$refs.scroll.scrollTo(0, 0, 500)
     },
     // 获取滚动位置的值，返回顶部
     contentScroll (position) {
-      // console.log(position)
       this.isShowBackTop = (-position.y) > 1000
+      this.isfixed = (-position.y) > this.tabOffsetTop
+      this.tabOffsetTop = this.$refs.tabControl2.$el.offsetTop + 44
     },
     // 下拉加载更多
     moreLoader () {
@@ -115,6 +140,15 @@ export default {
     showGoods () {
       return this.goods[this.tabGoods].list
     }
+  },
+  // 返回本页时回到离开时滚动到的位置
+  activated () {
+    this.$refs.scroll.refresh()
+    this.$refs.scroll.scrollTo(0, this.scrollY, 0)
+  },
+  // 离开本页时，记录离开时的页面滚动位置
+  deactivated () {
+    this.scrollY = this.$refs.scroll.scroll.y
   }
 };
 </script>
@@ -134,10 +168,14 @@ export default {
   z-index: 9;
 }
 .content {
-  // height: 500px;
-  // overflow: hidden;
   position: absolute;
-  top: 44px;
+  top: 43px;
   bottom: 49px;
+  overflow: hidden;
+}
+.tab-control {
+  position: relative;
+  z-index: 9;
+  top: 44px;
 }
 </style>

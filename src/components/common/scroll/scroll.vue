@@ -41,12 +41,20 @@ import BScroll from 'better-scroll'
     },
     methods: {
       // 封装返回顶部按钮的事件
-      backScroll (x, y, time = 300) {
-        this.scroll.scrollTo(x, y, time)
+      scrollTo (x, y, time = 300) {
+        this.scroll && this.scroll.scrollTo(x, y, time)
       },
       // 停止再重新加载更多
       finishPullUp () {
-        this.scroll.finishPullUp()
+        this.scroll && this.scroll.finishPullUp()
+      },
+      // 图片每个load后都进行一次计算高度
+      refresh () {
+        this.scroll && this.scroll.refresh()
+      },
+      // 获取scroll的y值
+      scrollY () {
+        return this.scroll ? this.scroll.y : 0
       }
     }
   }

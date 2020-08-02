@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div id='tabbar'>
+    <div class='tabbar'>
       <slot></slot>
     </div>
   </div>
@@ -10,7 +10,7 @@ export default {
 }
 </script>
 <style lang='less' scoped>
-#tabbar {
+.tabbar {
   width: 100%;
   height: 49px;
   background-color: #eee;

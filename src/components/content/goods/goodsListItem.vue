@@ -1,6 +1,6 @@
 <template>
-  <div class="goods-item">
-    <img :src="goodslist.show.img" alt="">
+  <div class="goods-item" @click="goodsItem">
+    <img v-lazy="imgUrl" alt="" @load="imgItemLoad">
     <div class="goods_text">
       <p>{{goodslist.title}}</P>
       <span>{{goodslist.price}}</span>
@@ -16,6 +16,25 @@
         default () {
           return {}
         }
+      }
+    },
+    methods: {
+      imgItemLoad () {
+        // 通过$bus的事件总线传递给home.vue页面接收，事件总线是哪个页面都可以拿到
+        if (this.$route.path.indexOf('/home') !== -1) {
+          this.$bus.$emit('HomeimgItemLoad')
+        } else if (this.$route.path.indexOf('/detail') !== -1) {
+          this.$bus.$emit('DetailimgItemLoad')
+        }
+        // this.$bus.$emit('imgItemLoad')
+      },
+      goodsItem () {
+        this.$router.push('/detail/' + this.goodslist.iid)
+      }
+    },
+    computed: {
+      imgUrl () {
+        return this.goodslist.image || this.goodslist.show.img
       }
     }
   }
